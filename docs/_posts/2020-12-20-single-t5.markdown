@@ -1,0 +1,11 @@
+---
+layout: post
+title:  "Would it really be possible to have a single model that could do custom NER and QA on the same data? Can T5 save the day?"
+date:   2020-12-20 19:26:28 +0100
+categories: medium article ner transformers t5
+---
+Having been hugely impressed so far with Transformers and my experimentation with BERT and GPT2, I came across T5 and thought it just sounded too good to be true. “One model to solve them all”, OK I’m paraphrasing there but that is how I read it, and so thought I’d have a play.
+
+Check out [my article on Medium].
+
+[my article on Medium]: https://medium.com/towards-data-science/would-it-really-be-possible-to-have-a-single-model-that-could-do-custom-ner-and-qa-on-the-same-data-94432f12ff52
