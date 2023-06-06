@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "COVID-19 risk and perspective - Data Analysis and Visualisation"
+title:  "Project: COVID-19 risk and perspective - Data Analysis and Visualisation"
 date:   2020-03-29 19:26:28 +0100
 categories: data
 ---

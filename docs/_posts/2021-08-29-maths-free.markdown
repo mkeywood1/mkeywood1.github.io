@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "A Simple Maths Free PyTorch Model Framework"
+title:  "Article: A Simple Maths Free PyTorch Model Framework"
 date:   2021-08-29 19:26:28 +0100
 categories: medium article ner pytorch
 ---

@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "How could I do simple inference on my Fine-Tuned Transformers NER models?"
+title:  "Article: How could I do simple inference on my Fine-Tuned Transformers NER models?"
 date:   2020-12-15 19:26:28 +0100
 categories: medium article ner transformers
 ---

@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "What do the Machine Learning Training and Validation graphs tell us?"
+title:  "Article: What do the Machine Learning Training and Validation graphs tell us?"
 date:   2022-06-07 19:26:28 +0100
 categories: medium article graphs
 ---

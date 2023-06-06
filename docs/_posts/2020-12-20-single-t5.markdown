@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "Would it really be possible to have a single model that could do custom NER and QA on the same data? Can T5 save the day?"
+title:  "Article: Would it really be possible to have a single model that could do custom NER and QA on the same data? Can T5 save the day?"
 date:   2020-12-20 19:26:28 +0100
 categories: medium article ner transformers t5
 ---

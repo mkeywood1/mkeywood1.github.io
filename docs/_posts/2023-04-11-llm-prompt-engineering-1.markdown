@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "LLM / GPT Prompt Engineering — going beyond the basics, and how you can mitigate against confusion"
+title:  "Article: LLM / GPT Prompt Engineering — going beyond the basics, and how you can mitigate against confusion"
 date:   2023-04-11 19:26:28 +0100
 categories: medium article llm prompt engineering
 ---
