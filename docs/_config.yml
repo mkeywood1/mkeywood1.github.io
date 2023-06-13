@@ -33,9 +33,12 @@ theme: minima
 plugins:
   - jekyll-feed
 
-collections:
-  pages: 
-    - samplemap.html
+header_pages:
+  - about.markdown
+  
+# collections:
+  # pages: 
+    # - samplemap.html
 
 # Exclude from processing.
 # The following items will not be processed, by default.
