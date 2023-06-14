@@ -8,7 +8,11 @@ categories: data forecasting clustering
 **NOTE: After this project was done, COVID-19 progressed at a devastating rate, effecting the lives of millions in tragic and deeply upsetting ways. This project was not meant to trivialise COVID-19 but in fact to try and help people understand the onslaught of data they were starting to see.
 I put it together at the start of the first UK lockdown, but the UK data was not as available as US data and so for illustrative purposes this focused on the US.**
 
-Utilising Real World Data, can we look at forecasting cases, and also clustering States into similar characteristics of their COVID-19 profile.
+This started as a personal project but we went on to take what I had started and used the data to do some more advanced forecasting and analytics for commercial uses.
+
+So what did I start with in my personal project?
+
+## Utilising Real World Data, can we look at forecasting cases, and also clustering States into similar characteristics of their COVID-19 profile?
 
 Having trawled a few sites, and looked at what data is out there, I came up with the following set of sources that I think would be useful to start to collate data across things like Covid stats, details of what public service / places are open / closed, other prevelant clinical conditions per state etc:
 
@@ -23,10 +27,6 @@ Having trawled a few sites, and looked at what data is out there, I came up with
 | Chronic Conditions           | Chronic_Conditions_Prevalence_2017.xlsx                                                                                                                                                          | Chronic Condition Prevalence          | County | Adhoc            |
 | 2016 Vote data               | raw.githubusercontent.com/tonmcg/US_County_Level_Election_ Results_08-16/master/US_County_Level_Presidential_Results_12-16.csv                                                            | 2016 electorial vote data             | County | N/A              |
 
-
-This started as a personal project but we went on to take what I had started and used the data to do some more advanced forecasting and analytics for commercial uses.
-
-So what did I start with in my personal project?
 
 ## First obviously the usual imports, and then define some functions for the main Feature Engineering and Forecasting
 
@@ -58,7 +58,9 @@ Here we pull in, cleanse and merge to a State level for:
 - 2016 Vote Data
 - State Wide StayAtHome / Closure rules
 
-All normalised out to per 100k of the State population
+All normalised out to per 100k of the State population.
+
+There is a lot of good data manipulation and Feature Engineering here, but all fairly straight forward.
 
 {% highlight python %}
 def get_all_data(path):
@@ -258,7 +260,7 @@ def get_all_data(path):
     df_tmp_TS['Date'] = df_tmp_TS['Date'].astype('datetime64[ns]')
     df_tmp_TS['Date'] = df_tmp_TS['Date'].dt.date
     df_tmp_TS['Date'] = df_tmp_TS['Date'].astype(str)
-    #df_tmp_TS = df_tmp_TS.fillna(0)
+	
     df_all_data = df_all_data.merge(df_tmp_TS, on=['Date', 'Province_State'], how='left').fillna(0)
 
     df_all_data.to_csv(path+'Data/df_all_data.csv', index=False)
@@ -266,7 +268,11 @@ def get_all_data(path):
     return df_all_data, df_state_data
 {% endhighlight %}
 
-### The 'get_forecast' function executes a simple ARIMA forecast for a desired data point
+### The `get_forecast` function executes a simple ARIMA forecast for a desired data point
+
+ARIMA (AutoRegressive Integrated Moving Average) is a time series forecasting method that models the relationship between variables over time.
+
+This function is again fairly straight forward. We forecast for the number of days requested, and return all the data in a tidy DataFrame.
 
 {% highlight python %}
 def get_forecast(path, day0_feature, forecast_days):
@@ -288,7 +294,6 @@ def get_forecast(path, day0_feature, forecast_days):
     df_forecast_data = pd.DataFrame()
 
     for state in df_all_states['Province_State']:
-        #print(state)
 
         plot_data = df_all_states_TS.loc[df_all_states_TS['Province_State'] == state, ['Date', day0_feature]]#.reset_index().drop('index', axis=1)
         plot_data.loc[plot_data[day0_feature] == 0, day0_feature] = plot_data[day0_feature].mean()
@@ -296,8 +301,6 @@ def get_forecast(path, day0_feature, forecast_days):
         today = max(plot_data.Date)
         index = pd.date_range(start=today, periods=forecast_days, freq="D")
         idxdates = index[1:]
-
-        # row_index = max(plot_data.index)+1
 
         X = plot_data[day0_feature].values
         history = [x for x in X]
@@ -369,7 +372,7 @@ states = df_tmp['state'].unique()
 for state in states:
     ax.plot(df_tmp[df_tmp['state']==state]['Date'], df_tmp[df_tmp['state']==state]['Confirmed'], label='Confirmed')
     
-    # Get dates on which state changes
+    # Get dates
     dates = df_tmp.loc[df_tmp['state'] == state, 'Date'].unique()
     
     # Annotate last date of state 
@@ -383,24 +386,350 @@ ax.set_xticks(ax.get_xticks())
 ax.tick_params(axis='x', rotation=45)
 plt.show()
 {% endhighlight %}
+
 <img src="https://mkeywood1.github.io/2020-05-07-covid_data_collection_forecasting_clustering/1.png">
 
-{% highlight python %}
+We can see that New York is way out ahead in terms of COVID-19 cases, second being New Jersey, which makes sense from a geographic / commuting sense.
 
-{% endhighlight %}
+Then California looks to be taking a swift upturn, and certainly needs to be kept an eye on.
 
-
-
-{% highlight python %}
-
-{% endhighlight %}
-
-
+### Then let's look at some of the conditions for infected people
 
 {% highlight python %}
+fig, ax = plt.subplots(figsize=(10, 6))
 
+outcome_cols = ['notHospitalized', 'hospitalizedCurrently', 'inIcuCurrently', 'onVentilatorCurrently', 'Deaths']
+
+# First get the latest totals per state for all except 'Confirmed'
+df_outcomes = df_all_data.groupby(['state'])[outcome_cols[1:]].last()
+df_outcomes = df_outcomes.reset_index()
+
+# Confirmed is a daily count so to compare apples and apples we need to make a cumulative count column
+df_tmp = df_all_data.groupby(['state'])['Confirmed'].sum().reset_index()
+
+df_outcomes = df_outcomes.merge(df_tmp, on="state")
+df_outcomes.drop("state", axis=1, inplace=True)
+
+df_outcomes['notHospitalized'] = df_outcomes['Confirmed'] - (df_outcomes['hospitalizedCurrently'] + df_outcomes['Deaths'])
+df_outcomes.drop("Confirmed", axis=1, inplace=True)
+
+plt.pie(df_outcomes.sum(), labels=df_outcomes.sum().index, autopct='%1.1f%%')
+plt.title('Case Outcomes')
+plt.show()
 {% endhighlight %}
 
+<img src="https://mkeywood1.github.io/2020-05-07-covid_data_collection_forecasting_clustering/2.png">
 
+### We can see the Not Hospitalized counts are dwarfing the rest, so let's excude those
+
+{% highlight python %}
+fig, ax = plt.subplots(figsize=(10, 6))
+
+plt.pie(df_outcomes[outcome_cols[1:]].sum(), labels=df_outcomes[outcome_cols[1:]].sum().index, autopct='%1.1f%%')
+plt.title('Case Outcomes')
+plt.show()
+{% endhighlight %}
+
+<img src="https://mkeywood1.github.io/2020-05-07-covid_data_collection_forecasting_clustering/3.png">
+
+We can see from these two charts that the number of infected people who are hospitalised is <1%, and the resultant deaths are <1% of those - still way too many :-(
+
+### Let's take a look at df_state_data
+
+{% highlight python %}
+fig, ax = plt.subplots(figsize=(6, 4))
+
+ax.scatter(df_state_data['Confirmed'], df_state_data['Deaths'], 
+            s=df_state_data['Population']/100000, alpha=0.5)
+
+df_tmp = df_state_data.query('Confirmed > 50000 | Deaths > 4500')
+
+for x, y, z in zip(df_tmp['Confirmed'], df_tmp['Deaths'], df_tmp['state']):
+    ax.annotate(z, (x, y), fontsize=12, color='red', weight='bold')
+    
+plt.xlabel('Total Cases')
+plt.ylabel('Total Deaths')
+plt.show()
+{% endhighlight %}
+
+<img src="https://mkeywood1.github.io/2020-05-07-covid_data_collection_forecasting_clustering/4.png">
+
+We can see the same picture with regards to those states heavily effected. The size of the bubble corelates to the population, so we can see with the size of California coupled with visable increase seen in the last graph again means this is something to keep a close eye on.
+
+## OK let's go on to collate the forecast data, and see if we can forecast the next 10 days
+
+{% highlight python %}
+if regenerate_forecast_data or get_fresh_data:
+    df_all_states, df_all_states_TS = get_forecast_data(path, day0_feature, day0_minimum, checkpoint_interval)
+else:
+    df_all_states = pd.read_csv(path+'Data/df_all_states.csv')
+    df_all_states_TS = pd.read_csv(path+'Data/df_all_states_TS.csv')
+{% endhighlight %}
+
+### Firstly the number of positive cases
+
+{% highlight python %}
+def show_forecast(state):
+    fig, ax = plt.subplots(figsize=(12, 6))
+
+    df_tmp = df_forecast_data[df_forecast_data["state"]==state]
+
+    ax.plot(df_tmp["Date"], df_tmp[day0_feature])
+    ax.plot(df_tmp["Date"], df_tmp["forecast"])
+    # ax.set_xticks(ax.get_xticks())
+    # ax.tick_params(axis='x', rotation=90)
+
+    # set the number of tick labels on the x-axis
+    num_ticks = 7
+    xtick_locs = ax.get_xticks()
+    xtick_labels = [loc for loc in xtick_locs[::int(len(xtick_locs)/num_ticks)]]
+    xtick_labels = [df_tmp.iloc[loc]['Date'] for loc in xtick_locs[::int(len(xtick_locs)/num_ticks)]]
+    ax.set_xticks(xtick_locs[::int(len(xtick_locs)/num_ticks)])
+    ax.set_xticklabels(xtick_labels)
+
+    plt.show()
+	
+day0_minimum = 10
+forecast_days = 10
+
+day0_feature = 'positive'
+df_forecast_data = get_forecast(path, day0_feature, forecast_days)
+# df_forecast_data
+
+# Let's look at the forecast for North Carolina
+show_forecast("NC")
+{% endhighlight %}
+
+<img src="https://mkeywood1.github.io/2020-05-07-covid_data_collection_forecasting_clustering/5.png">
+
+### And what about forecasting the increase rate
+
+{% highlight python %}
+day0_feature = 'positiveIncrease'
+df_forecast_data = get_forecast(path, day0_feature, forecast_days)
+# df_forecast_data
+
+# Let's look at the forecast for North Carolina
+show_forecast("NC")
+{% endhighlight %}
+
+<img src="https://mkeywood1.github.io/2020-05-07-covid_data_collection_forecasting_clustering/6.png">
+
+Unsuprisingly, the forecast of both values shows an upwards trend at the time of generation :-(
+
+## And finally, can we cluster the states into similarity in terms of it's Covid characteristics etc
+
+First a helper function to allow us to pull out the fields pertinent to the clustering.
+
+{% highlight python %}
+def cluster_columns_only(path, checkpoint_interval):
+    """return just the fields we are going to use for K-Means clustering.
+
+    Inputs:
+    path                - File path
+    checkpoint_interval - Interval between checkpoints
+
+    Outputs:
+    df_all_states       - State-level summaries with cluster assignments
+    X                   - Data of just the relevant columns
+    """
+
+    df_all_states = pd.read_csv(path+'Data/df_all_states.csv')
+    try:
+        df_all_states.drop('Cluster', axis=1, inplace=True)
+    except:
+        pass
+
+    toExclude = ['Province_State', 'state', 'MaxDays', 'Population', 'Confirmed', 'Deaths']
+
+    X = df_all_states.copy()
+    X.drop(list(toExclude), axis=1, inplace=True)
+
+    toExclude = []
+    for chk in range(1,10):
+        for col in X.columns:
+            if col.split('_')[0] == 'Day'+str(chk*checkpointInterval):
+                toExclude.append(col)
+    X.drop(toExclude, axis=1, inplace=True)
+    X = X.astype(str).replace(',','', regex=True)
+    X = X.astype(float)
+    
+    return df_all_states, X
+{% endhighlight %}
+
+And it's appropriate pipeline for the preprocessing.
+- Scaling is important for K-Means because K-Means is a distance-based algorithm that clusters data points based on their Euclidean distance from a centroid. If the features in the dataset are not scaled, some of them may be given higher weights than others, which can result in clustering biases towards features with larger magnitudes. This can lead to poor cluster assignments and reduced accuracy
+- Principal Component Analysis (PCA) is a dimensionality reduction technique that is used to reduce the number of features in a dataset, while retaining as much of the original variance and information in the dataset as possible. Therefore PCA can be useful for preprocessing data before clustering
+
+{% highlight python %}
+preprocessor = Pipeline(
+    [
+        ("scaler", MinMaxScaler()),
+        ("pca", PCA(n_components=2, random_state=42)),
+    ]
+)
+{% endhighlight %}
+
+Then get the training data columns, and pre-process them.
+
+{% highlight python %}
+checkpointInterval = 7
+
+df_all_states, X = cluster_columns_only(path, checkpointInterval)
+
+preprocessed_X = preprocessor.fit_transform(X)
+# preprocessed_X
+{% endhighlight %}
+
+## But how can we determine the right number of clusters?
+
+There are two good methods we can use to try and determine the appropriate value for k. The elbow method and silhouette method.
+- The elbow method involves plotting the relationship between the number of clusters (k) and the sum of squared distances between data points and their assigned cluster center. The ideal k value is the point where the decrease in sum of squared distances starts to level off (i.e., the elbow point)
+- The silhouette method involves calculating the average silhouette score for each number of clusters k. The silhouette score measures how similar a data point is to its assigned cluster compared to other clusters. It ranges from -1 to 1, where values closer to 1 indicate that a data point is well matched to its cluster
+
+### Elbow method to select k
+
+{% highlight python %}
+kmeans_kwargs = {
+    "init": "random",
+    "n_init": 10,
+    "max_iter": 300,
+    "random_state": 1972,
+}
+
+# A list holds the sum of squared errors (SSE) values for each k
+sse = []
+for k in range(1, 11):
+    kmeans = KMeans(n_clusters=k, **kmeans_kwargs)
+    kmeans.fit(preprocessed_X)
+    sse.append(kmeans.inertia_)
+
+plt.plot(range(1, 11), sse)
+plt.xticks(range(1, 11))
+plt.xlabel("Number of Clusters")
+plt.ylabel("SSE")
+plt.show()
+{% endhighlight %}
+
+<img src="https://mkeywood1.github.io/2020-05-07-covid_data_collection_forecasting_clustering/7.png">
+
+### Silhouette method to select k
+
+{% highlight python %}
+# A list holds the silhouette coefficients for each k
+silhouette_coefficients = []
+
+# Notice we start at 2 clusters for silhouette coefficient
+for k in range(2, 11):
+    kmeans = KMeans(n_clusters=k, **kmeans_kwargs)
+    kmeans.fit(preprocessed_X)
+    score = silhouette_score(preprocessed_X, kmeans.labels_)
+    silhouette_coefficients.append(score)
+
+plt.plot(range(2, 11), silhouette_coefficients)
+plt.xticks(range(2, 11))
+plt.xlabel("Number of Clusters")
+plt.ylabel("Silhouette Coefficient")
+plt.show()
+{% endhighlight %}
+
+<img src="https://mkeywood1.github.io/2020-05-07-covid_data_collection_forecasting_clustering/8.png">
+
+Both methods indicate **3** is a good cluster size, so let's build it with that.
+
+{% highlight python %}
+n_clusters = 3
+
+clusterer = Pipeline(
+   [
+       (
+           "kmeans",
+           KMeans(
+               n_clusters=n_clusters,
+               init="k-means++",
+               n_init=50,
+               max_iter=500,
+               random_state=42,
+           ),
+       ),
+   ]
+)
+
+pipe = Pipeline(
+    [
+        ("preprocessor", preprocessor),
+        ("clusterer", clusterer)
+    ]
+)
+
+pipe.fit(X)
+{% endhighlight %}
+
+Get the predicted labels, and the associated silhoutte score.
+
+{% highlight python %}
+predicted_labels = pipe["clusterer"]["kmeans"].labels_
+predicted_labels
+{% endhighlight %}
+
+`array([1, 2, 2, 1, 0, 2, 0, 0, 0, 1, 0, 2, 0, 1, 2, 1, 1, 1, 2, 0, 0, 0,
+       2, 1, 1, 2, 2, 0, 2, 0, 2, 0, 1, 2, 1, 1, 2, 0, 0, 1, 2, 1, 1, 2,
+       2, 0, 2, 1, 2, 2])`
+
+{% highlight python %}
+silhouette_score(preprocessed_X, predicted_labels)
+{% endhighlight %}
+
+`0.4398675185111555`
+
+So silhouette ranges from -1 to 1, so this is not bad - pretty confident :-)
+
+### Finally let's look at these as clusters
+
+{% highlight python %}
+pcadf = pd.DataFrame(
+    pipe["preprocessor"].transform(X),
+    columns=["component_1", "component_2"],
+)
+
+# Add in the cluster
+pcadf["predicted_cluster"] = pipe["clusterer"]["kmeans"].labels_
+
+# Add in the State code
+pcadf['state'] = df_all_states['state'].to_list()
+pcadf.head()
+{% endhighlight %}
+
+<img src="https://mkeywood1.github.io/2020-05-07-covid_data_collection_forecasting_clustering/9.png">
+
+{% highlight python %}
+plt.figure(figsize=(8, 8))
+
+scat = sns.scatterplot(
+    "component_1",
+    "component_2",
+    s=50,
+    data=pcadf,
+    hue="predicted_cluster",
+    palette="Set1",
+)
+
+# loop through the data and add annotations for each point
+for i in range(len(pcadf)):
+    label = pcadf.iloc[i]['state']  # get the label from the 'state' column in the data
+    x = pcadf.iloc[i]['component_1']  # get the x-coordinate
+    y = pcadf.iloc[i]['component_2']  # get the y-coordinate
+    plt.annotate(label, (x, y), textcoords="offset points", xytext=(0,10), ha='center')
+
+
+scat.set_title("Clustering results for States with Covid Characteristic Similarities")
+plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.0)
+
+plt.show()
+{% endhighlight %}
+
+<img src="https://mkeywood1.github.io/2020-05-07-covid_data_collection_forecasting_clustering/10.png">
+
+This looks pretty good to me. Cluster 0 has NY, NJ, CA etc, which makes sense, and I think there are some good insights here as to how things could progress.
 
 Thanks for reading :-)
