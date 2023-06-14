@@ -732,4 +732,6 @@ plt.show()
 
 This looks pretty good to me. Cluster 0 has NY, NJ, CA etc, which makes sense, and I think there are some good insights here as to how things could progress.
 
+The full repo can be found <a href="https://github.com/mkeywood1/covid-forecasting" target="_blank">here</a>.
+
 Thanks for reading :-)
