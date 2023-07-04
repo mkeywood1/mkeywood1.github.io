@@ -622,7 +622,7 @@ Fantastic !!!
 
 We can see the questions / answers that were relevant to each cluster, including the degree of relevance.
 
-Next step pull the whole lot together in a Streamlit App called ‘streamlit_clustering.py’, also in the repo. In this you can try the different ones, which fields to use, which algorithms to use, which clusters to visualize etc.
+Next step pull the whole lot together in a Streamlit App called `streamlit_clustering.py`, also in the repo. In this you can try the different ones, which fields to use, which algorithms to use, which clusters to visualize etc.
 
 <img src="https://mkeywood1.github.io/2023-07-03-unsupervised-clustering-comparisons/11.png">
 
