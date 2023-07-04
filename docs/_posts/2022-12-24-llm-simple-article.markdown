@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "Article: A Simplified Explanation of Machine Learning and Deep Learning — with a twist"
+title:  "Article: A Simplified Explanation of Machine Learning and Deep Learning - with a twist"
 date:   2022-12-24 19:26:28 +0100
 categories: medium article llm
 ---
